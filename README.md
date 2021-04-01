@@ -1,0 +1,2 @@
+# Training_courses_for_smart_data_experts_using_bigdata
+스마트데이터 전문가 양성과정
