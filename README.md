@@ -18,7 +18,7 @@
 </thead>
 <tbody>
   <tr>
-    <td class="tg-k9ij" rowspan="9"><br><br><br><br><br><br><br><br><br><br>이론<br>(240h)</td>
+    <td class="tg-k9ij" rowspan="9">이론<br><br>(240h)</td>
     <td class="tg-td0d">Orientation, Git과 GitGub</td>
     <td class="tg-k9ij">8</td>
     <td class="tg-td0d">5/27~5/27</td>
@@ -73,7 +73,7 @@
     <td class="tg-td0d"></td>
   </tr>
   <tr>
-    <td class="tg-k9ij" rowspan="9"><br><br><br><br><br><br><br><br>실습 및<br>프로젝트<br>(440h)</td>
+    <td class="tg-k9ij" rowspan="9">실습 및<br><br>프로젝트<br>(440h)</td>
     <td class="tg-td0d">R 데이터 분석 미니 프로젝트(1부)</td>
     <td class="tg-k9ij">32</td>
     <td class="tg-td0d"></td>
@@ -128,11 +128,11 @@
     <td class="tg-td0d"></td>
   </tr>
   <tr>
-    <td class="tg-k9ij"><br>책임멘토<br>(200h)</td>
+    <td class="tg-k9ij">책임멘토<br>(200h)</td>
     <td class="tg-td0d">- 최종 프로젝트<br>(개발 방법론을 적용한 데이터 분석 프로젝트)<br>- 위세아이텍 특강</td>
-    <td class="tg-k9ij"><br>200</td>
-    <td class="tg-td0d"><br>9/30~11/8<br></td>
-    <td class="tg-td0d">이경희 멘토님<br><br>김지혁 박사님</td>
+    <td class="tg-k9ij">200<br></td>
+    <td class="tg-td0d">9/30~11/8</td>
+    <td class="tg-td0d">이경희 멘토님<br>김지혁 박사님<br></td>
   </tr>
   <tr>
     <td class="tg-k9ij" colspan="2">합계</td>
