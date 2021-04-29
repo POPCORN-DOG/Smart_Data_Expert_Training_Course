@@ -1,0 +1,2 @@
+Year,Month,DayofMonth,DayOfWeek,DepTime,CRSDepTime,ArrTime,CRSArrTime,UniqueCarrier,FlightNum,TailNum,ActualElapsedTime,CRSElapsedTime,AirTime,ArrDelay,DepDelay,Origin,Dest,Distance,TaxiIn,TaxiOut,Cancelled,CancellationCode,Diverted,CarrierDelay,WeatherDelay,NASDelay,SecurityDelay,LateAircraftDelay
+1999,1,27,3,1906,1908,2024,2005,US,1244,N942VJ,78,57,66,19,-2,RIC,PHL,198,3,9,0,NA,0,NA,NA,NA,NA,NA

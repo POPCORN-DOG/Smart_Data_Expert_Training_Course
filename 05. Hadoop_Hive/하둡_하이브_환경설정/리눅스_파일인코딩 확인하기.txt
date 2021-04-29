@@ -1,0 +1,2 @@
+# 참고사이트
+- [Find 명령만으로 모든 파일의 한글 인코딩 변환하기](http://egloos.zum.com/mcchae/v/10938486)

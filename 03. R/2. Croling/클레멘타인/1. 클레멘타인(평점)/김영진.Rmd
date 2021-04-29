@@ -1,0 +1,544 @@
+---
+title: "[프로젝트 1] 클레멘타인 네이버 영화리뷰"
+author: "김영진"
+date: '2019 7 9(화) '
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## **1. 클레멘타인(평점) 크롤링 **
+```{r, eval=FALSE}
+
+#eval=FALSE
+##                                                 
+## ==============================================================================================
+##                               클레멘타인 네이버 영화 리뷰. 
+## ==============================================================================================
+
+install.packages('rvest')
+install.packages('dplyr')
+install.packages('stringr')
+install.packages('lubridate')
+install.packages('xlsx')
+library(rvest)
+library(dplyr)
+library(stringr)
+library(lubridate)
+library(xlsx)
+
+Clementine_url <- 'https://movie.naver.com/movie/bi/mi/pointWriteFormList.nhn?code=37886&type=after&isActualPointWriteExecute=false&isMileageSubscriptionAlready=false&isMileageSubscriptionReject=false&page='
+
+urls <- NULL
+for(i in 1:10){
+  urls[i] <- paste0(Clementine_url,i)
+}
+
+total <- NULL
+page  <- NULL
+score <- NULL 
+reple <- NULL
+name  <- NULL
+date  <- NULL
+like  <- NULL
+hate  <- NULL
+date  <- NULL
+
+i <- 0
+for(url in urls){
+  i <- i + length(url)
+  if(i %% 10 == 0)
+  print(i)
+  
+  html  <- read_html(url)
+  total <- html %>% 
+             html_nodes('.total') %>% 
+             html_nodes('em') %>% 
+           .[2] %>% 
+             html_text() %>%
+             gsub(",","",.) %>%
+             as.numeric()
+  page  <- ceiling(total/10)
+  score <- c(score, html %>%
+               html_nodes('.score_result') %>%
+               html_nodes('.star_score') %>%
+               html_node('em') %>%             # .이 있으면 class 없으면 tag
+               html_text())
+  reple <- c(reple, html %>%
+               html_nodes('.score_result') %>%
+               html_nodes('.score_reple') %>%
+               html_node('p') %>%
+               html_text())
+  name  <- c(name, html %>%
+               html_nodes('.score_result') %>%
+               html_nodes('.score_reple') %>%
+               html_node('dt') %>%
+               html_node('a') %>%
+               html_node('span') %>%
+               html_text())
+  like  <- c(like, html %>% 
+               html_nodes('.btn_area') %>%       
+               html_node('strong') %>%
+               html_node('span') %>%
+               html_text())
+  hate  <- c(hate ,html %>% 
+               html_nodes('.btn_area') %>% 
+               html_nodes('strong') %>% 
+               .[grep('notSympathy',.)] %>%
+               html_text())
+  date  <- c(date, html %>% 
+               html_nodes('.score_result') %>% 
+               html_nodes('.score_reple') %>% 
+               html_node('dt') %>% 
+               html_nodes('em') %>% 
+               .[-grep('onclick',.)] %>% 
+               html_text())
+}
+
+
+
+Naver_CINE_Review <- data.frame(날짜   = 날짜 <- date %>% str_replace_all("\\.","-") %>% as.Date(),
+                                년도   = year(날짜),
+                                월     = month(날짜),
+                                일     = day(날짜),
+                                시간   = date %>% str_sub(-5),
+                                요일   = paste0(wday(날짜,T),'요일'),
+                                점수   = score,
+                                좋아요 = like,
+                                싫어요 = hate,
+                                이름   = name,
+                                리플   = reple)
+
+write.csv(Naver_CINE_Review, file = "클레멘타인_네이버 리뷰(2).csv",
+           sheetName="클레멘타인",
+           col.names=T,row.names=F,append=F)
+
+```
+
+### **결과물**
+```{r}
+Clementine<-read.csv('클레멘타인_네이버 리뷰(2).csv')
+head(Clementine,10)
+```
+<br>
+
+## **2. 클레멘타인(평점) 전처리 **
+
+```{r, eval=FALSE}
+##                                                 
+## ==============================================================================================
+##                               클레멘타인(평점) 워드 클라우드. 
+## ==============================================================================================
+## https://kutar37.tistory.com/entry/R%EC%9D%84-%EC%9D%B4%EC%9A%A9%ED%95%9C-%ED%85%8D%EC%8A%A4%ED%8A%B8%EB%A7%88%EC%9D%B4%EB%8B%9D-%EC%9B%8C%EB%93%9C%ED%81%B4%EB%9D%BC%EC%9A%B0%EB%93%9C
+## https://cran.r-project.org/web/packages/wordcloud2/wordcloud2.pdf  
+
+# scale 가장 빈도가 큰 단어와 가장 빈도가 작은단어 폰트사이의 크기차이 scale=c(10,1)
+# minfreq 출력될 단어들의 최소빈도
+# maxwords 출력될 단어들의 최대빈도(inf:제한없음)
+# random.order(true면 랜덤, false면 빈도수가 큰 단어를 중앙에 배치하고 작은순)
+# random.color(true면 색 랜덤, false면 빈도순)
+# rot.per(90도 회전된 각도로 출력되는 단어비율)
+# colors 가장 작은빈도부터 큰 빈도까지의 단어색
+# family 글씨체
+
+
+install.packages('KoNLP')        # 한글 형태소 분석
+install.packages('wordcloud')
+install.packages('wordcloud2')
+install.packages('RColorBrewer') # 색깔 팔레트
+install.packages('rJava')
+install.packages("extrafont")
+library(extrafont)
+library(KoNLP)
+library(wordcloud)
+library(wordcloud2)
+library(RColorBrewer)
+library(rJava)
+
+# 0. 사전 추가
+useSejongDic()
+
+# 1. 데이터 불러오기 ---------------------------------------------
+setwd('D:/dudwlsrla92/R-Project/Croling/클레멘타인/1. 클레멘타인(평점)')
+getwd()
+Clementine<-read.csv('클레멘타인_네이버 리뷰(2).csv')
+Clementine_reple<-as.character(Clementine$리플)
+length(Clementine_reple)
+str(Clementine_reple)
+
+# 2. 사전에 단어 추가하기. ---------------------------------------
+mergeUserDic(data.frame(c("노잼"), "ncn"))
+
+add_dic <- readLines("클레멘타인_추가단어.txt")
+for(i in 1:length(add_dic)){
+  mergeUserDic(data.frame(add_dic[i],"ncn"))
+}
+
+# 2. 명사 추출 (extractNoun) -------------------------------------
+Clementine_Noun   <- sapply(Clementine_reple, extractNoun, USE.NAMES = F)
+head(Clementine_Noun)
+
+# 3. 중간저장 (unlist) --------------------------------------------
+write(unlist(Clementine_Noun),"클레멘타인_전처리1.txt")
+Cl_unlist <- readLines("클레멘타인_전처리1.txt")
+head(Cl_unlist)
+```
+
+<br>
+
+### **2.1 전처리 전**
+```{r}
+Cl_unlist <- readLines("클레멘타인_전처리1.txt")
+
+# 4. table ------------------------------------------------------
+Cl_table <- table(Cl_unlist)
+
+# 5. sort -------------------------------------------------------
+Cl_top    <- sort(Cl_table, decreasing = T)
+head(Cl_top,100)
+```
+
+
+```{r, eval=FALSE}
+# 4. 전처리 (1)_정규식 --------------------------------------------
+Cl_filter <- gsub("\\d+","",Cl_unlist)
+Cl_filter <- gsub("ㄱ-ㅎ","",Cl_filter)
+Cl_filter <- gsub("ㅜ|ㅠ","",Cl_filter)
+Cl_filter <- gsub('[~^!@#$%&*()_+=?<>]','',Cl_filter)
+Cl_filter <- gsub("클레멘타인\\S*","클레멘타인",Cl_filter)
+Cl_filter <- gsub("나았습니\\S*","병이나았어",Cl_filter)
+Cl_filter <- gsub("감사합니\\S*","감사해",Cl_filter)
+Cl_filter <- gsub('[~^!@#$%&*()_+=?<>]','',Cl_filter)
+Cl_filter <- gsub(" ","",Cl_filter)
+
+Cl_filter  <- Filter(function(x){nchar(x) >= 2 & nchar(x) <= 6},Cl_filter)
+
+# 4. 전처리 (2)_gsub --------------------------------------------
+txt <- readLines("클레멘타인gsub.txt")
+
+i <- 0
+for(i in 1:length(txt)){
+  Cl_filter <- gsub((txt[i]),"",Cl_filter)
+}
+
+Cl_filter2  <- Filter(function(x){nchar(x) >= 2 & nchar(x) <= 6},Cl_filter)
+head(Cl_filter2)
+
+# 5. 중간저장 write ---------------------------------------------
+write(Cl_filter2,"클레멘타인_전처리2.txt")
+Cl <- readLines("클레멘타인_전처리2.txt")
+head(Cl)
+```
+
+<br>
+
+### **2.2 전처리 후**
+
+```{r}
+Cl <- readLines("클레멘타인_전처리2.txt")
+
+# 4. table ------------------------------------------------------
+Cl_table <- table(Cl)
+
+# 5. sort -------------------------------------------------------
+Cl_top    <- sort(Cl_table, decreasing = T)
+head(Cl_top,100)
+```
+
+<br>
+
+### **[wordcloud1]**
+
+```{r}
+library(wordcloud)
+
+Cl <- readLines("클레멘타인_전처리2.txt")
+Cl_top    <- sort(table(Cl), decreasing = T)
+
+windowsFonts(baedal=windowsFont("배달의민족 도현"))
+palete <- brewer.pal(9,"Set3") 
+
+par(bg="black")
+wordcloud(head(names(Cl_top),1000),
+          freq=Cl_top,   #
+          scale=c(5,0.3),   # 빈도가 가장 큰 단어와 가장 빈도가 작은 단어 폰트 사이 크기
+          rot.per=0.25,     # 90도 회정해서 보여줄 단어 비율.
+          min.freq=1,       # 이 값 이상 언급된 단어만 출력.
+          max.words=1000,   # 빈도 3이상 100미만 단어 표현.
+          random.order=F,   # (F)빈도가 큰 단어를 중앙에 두도록 함.
+          random.color=F,   # (T)색상랜덤/(F)빈도수순으로 색상표현.
+          colors=palete,
+          family="baedal")
+#legend('top',1,"클레멘타인_WordCloud",
+#       cex=0.8,
+#       fill=NA,
+#       border=NA,
+#       bg="white",
+#       text.col="red",
+#       text.font=2,
+#       box.col="red")
+```
+
+<br>
+
+### **[wordcloud2]**
+
+```{r}
+# 6. wordcloud2 --------------------------------------------------
+library(wordcloud2)
+
+Cl <- readLines("클레멘타인_전처리2.txt")
+Cl_top    <- sort(table(Cl), decreasing = T)
+
+windowsFonts(baedal=windowsFont("배달의민족 도현"))
+
+a <- c("white", rep("gold", length(Cl_top)))
+wordcloud2(Cl_top,
+           size=0.5,
+           minSize=0,
+           gridSize=6,                
+           col=a,          
+           rotateRatio=0,            
+           backgroundColor = "black", 
+           shape = 'star',            
+           shuffle = T,
+           fontFamily = 'baedal',
+           fontWeight = 'bold',
+           ellipticity = 0.65)  
+```
+
+<br>
+
+## **3. 클레멘타인(평점) 그래프 **
+
+```{r, eval=FALSE}
+##                                                 
+## ==============================================================================================
+##                               클레멘타인 그래프 시각화. 
+## ==============================================================================================
+
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+windowsFonts(baedal=windowsFont("배달의민족 도현"))
+palete <- brewer.pal(9,"Set3") 
+clementine<-read.csv('클레멘타인_네이버 리뷰(2).csv')
+```
+
+<br>
+
+### **[점수별 빈도표]**
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+windowsFonts(baedal=windowsFont("배달의민족 도현"))
+
+clementine<-read.csv('클레멘타인_네이버 리뷰(2).csv')
+clementine %>%
+  group_by(점수) %>% 
+  summarise(갯수=n()) %>% 
+  ggplot(aes(x=as.factor(점수), y=갯수, fill=as.factor(점수)))+
+  geom_bar(stat="identity",color="black") +
+    geom_text(aes(y=갯수+1000,label=갯수), 
+            color='black',
+            size=5,
+            family="baedal") +
+  theme_bw(base_family='baedal',
+           base_size = 10,
+           base_rect_size = 4,
+           base_line_size = 1) +
+  labs(x='점수') +
+  ggtitle('클레멘타인 평점별 댓글수') +
+  theme(legend.position = "none",
+        plot.title = element_text(family="baedal",
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  vjust = 1,
+                                  size = 18, 
+                                  color = "black")) 
+```
+
+
+
+<br>
+
+### **[년도별 평점합계]**
+
+```{r}
+# 1. 년도별 평점합계
+
+clementine %>%
+  filter(년도>2003) %>%
+  group_by(년도) %>% 
+  summarise(평점합계=sum(점수,na.rm=T),갯수=n(),평점=평점합계/갯수) %>% 
+  ggplot(aes(x=as.factor(년도), y=평점합계, fill=as.factor(년도)))+
+  geom_bar(stat="identity",color="black") + 
+  geom_point(aes(y=갯수*8),shape=20,size=5,col='red')+
+  geom_text(aes(y=평점합계+1000,label=paste0(평점합계,"점")), 
+            color='black',
+            size=2.5,
+            family="baedal") +
+  geom_text(aes(y=갯수*8-1000,label=paste0(갯수,'개')), 
+            color='white',
+            size=2.5,
+            family="baedal") +
+  geom_text(aes(y=-1000,label=paste0(round(평점,1),'점')), 
+            color='black',
+            size=3,
+            family="baedal") +
+  geom_hline(yintercept=seq(0,30000,2500),lty='dashed',size=0.5) + 
+  theme_bw(base_family='baedal',
+           base_size = 10,
+           base_rect_size = 4,
+           base_line_size = 1) +
+  labs(x='년도') +
+  ggtitle('클레멘타인 년도별 평점(막대:합계, 점:갯수, 밑:평점평균)') +
+  theme(legend.position = "none",
+        axis.text.x  = element_text(angle=45, hjust=1),
+        plot.title = element_text(family="baedal",
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  vjust = 1,
+                                  size = 18, 
+                                  color = "black")) 
+```
+<br>
+#### **가장 높은 년도<br>**
+#### **2014년 : 평점합계 & 평점갯수<br>**
+#### **2011년 : 평점평균 9.56점 <br>**
+
+<br>
+
+### **[월별 평점합계]**
+
+```{r}
+clementine %>%
+  group_by(월) %>% 
+  summarise(평점합계=sum(점수,na.rm=T),갯수=n(),평점=평점합계/갯수) %>% 
+  ggplot(aes(x=as.factor(월), y=평점합계, fill=as.factor(월)))+
+  geom_bar(stat="identity",color="black") + 
+  geom_point(aes(y=갯수*9),col='red',shape=20,size=5)+
+  geom_text(aes(y=평점합계+1000,label=paste0(평점합계,"점")), 
+            color='black',
+            size=3,
+            family="baedal") +
+  geom_text(aes(y=갯수*9-1000,label=paste0(갯수,'개')), 
+            color='white',
+            size=3,
+            family="baedal") +
+  geom_text(aes(y=-1000,label=paste0(round(평점,1),'점')), 
+            color='black',
+            size=4,
+            family="baedal") +
+  geom_hline(yintercept=seq(0,30000,2500),lty='dashed',size=0.5) + 
+  theme_bw(base_family='baedal',
+           base_size = 10,
+           base_rect_size = 4,
+           base_line_size = 1) +
+  labs(x='월') +
+  ggtitle('클레멘타인 월별 평점(막대:합계, 점:갯수, 밑:평점평균)') +
+  theme(legend.position = "none",
+        plot.title = element_text(family="baedal",
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  vjust = 1,
+                                  size = 18, 
+                                  color = "black")) 
+
+```
+<br>
+#### **가장 높은 월<br>**
+#### **7월    : 평점합계 & 평점갯수<br>**
+#### **9,11월 : 평점평균 9.48점 <br>**
+
+<br>
+
+### **[일별 평점합계]**
+
+```{r}
+clementine %>%
+  group_by(일) %>% 
+  summarise(평점합계=sum(점수,na.rm=T),갯수=n(),평균=평점합계/갯수) %>% 
+  ggplot(aes(x=as.factor(일), y=평점합계, fill=as.factor(일)))+
+  geom_bar(stat="identity",color="black") + 
+  geom_point(aes(y=갯수*9),col='red',shape=20,size=5)+
+  geom_text(aes(y=평점합계+400,label=paste0(평점합계,"점")), 
+            color='black',
+            size=2,
+            family="baedal") +
+  geom_text(aes(y=갯수*9-500,label=paste0(갯수,'개')), 
+            color='white',
+            size=2,
+            family="baedal") +
+  geom_text(aes(y=-500,label=paste0(round(평균,1),'점')), 
+            color='black',
+            size=2,
+            family="baedal") +
+  geom_hline(yintercept=seq(0,15000,2500),lty='dashed',size=0.5) + 
+  theme_bw(base_family='baedal',
+           base_size = 10,
+           base_rect_size = 4,
+           base_line_size = 1) +
+  labs(x='일') +
+  ggtitle('클레멘타인 일별 평점(막대:합계, 점:갯수, 밑:평점평균)') +
+  theme(legend.position = "none",
+        axis.text.x  = element_text(hjust=1),
+        plot.title = element_text(family="baedal",
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  vjust = 1,
+                                  size = 18, 
+                                  color = "black")) 
+```
+<br>
+#### **가장 높은 일<br>**
+#### **17일 : 평점합계 & 평점갯수<br>**
+#### **11월 : 평점평균 9.53점 <br>**
+
+<br>
+
+### **[시간별 평점합계]**
+
+```{r}
+clementine$시 <- clementine$시간 %>% str_sub(1,2) %>% gsub('00','24',.)
+clementine %>%
+  group_by(시) %>% 
+  summarise(평점합계=sum(점수,na.rm=T),갯수=n(),평균=평점합계/갯수) %>% 
+  ggplot(aes(x=as.factor(시), y=평점합계, fill=시))+
+  geom_bar(stat="identity",color="black") + 
+  geom_point(aes(y=갯수*9),col='red',shape=20,size=5)+
+  geom_text(aes(y=평점합계+500,label=paste0(평점합계,"점")), 
+            color='black',
+            size=2,
+            family="baedal") +
+  geom_text(aes(y=갯수*9-500,label=paste0(갯수,'개')), 
+            color='white',
+            size=2,
+            family="baedal") +
+  geom_text(aes(y=-500,label=paste0(round(평균,1),'점')), 
+            color='black',
+            size=2.5,
+            family="baedal") +
+  geom_hline(yintercept=seq(0,15000,2500),lty='dashed',size=0.5) + 
+  theme_bw(base_family='baedal',
+           base_size = 10,
+           base_rect_size = 4,
+           base_line_size = 1) +
+  labs(x='시간') +
+  ggtitle('클레멘타인 시간별 평점(막대:합계, 점:갯수, 밑:평점평균)') +
+  theme(legend.position = "none",
+        axis.text.x  = element_text(hjust=1),
+        plot.title = element_text(family="baedal",
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  vjust = 1,
+                                  size = 18, 
+                                  color = "black"))
+
+```
+<br>
+#### **가장 높은 시간<br>**
+#### **23시 : 평점합계 & 평점갯수<br>**
+#### **10시 : 평점평균 9.55점 <br>**

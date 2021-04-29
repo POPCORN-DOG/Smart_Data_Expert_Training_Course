@@ -1,0 +1,65 @@
+# (Hive_lotte) 로또데이터의 엑셀파일에서 스키마 파일을 만들어서 'lotto'라는 테이블을 만드시오
+
+
+## 테이블 생성 
+
+create table lotto (
+seq_no string,
+win_no1 int,
+win_no2 int,
+win_no3 int,
+win_no4 int,
+win_no5 int,
+win_no6 int,
+win_no7 int,
+winner_nu int,
+year int,
+month int)
+row format delimited
+fields terminated by ','
+lines terminated by '\n'
+stored as textfile;
+
+## 데이터 불러오기
+load data local inpath 'lotto.csv'
+overwrite into table lotto;
+
+
+
+
+1. 월별로 당첨자수(winner_nu)를 구분하여 나타내시오
+
+select month, winner_nu
+from lotto
+group by month;
+
+2. 회차별로(seq_no) 당첨자수를 내림차순으로 나타내시오
+
+select seq_no, winner_nu
+from lotto
+order by winner_nu desc;
+
+
+3. 각번호의 선택숫자(Win_no1~7)에서 나타나는선정된 숫자들의 패턴(상위 10개까지)을 
+    보이시오
+
+select win_no7, count(win_no7) as c_no7
+from lotto
+group by win_no7
+order by win_no7;
+
+
+
+4. 전체 선택된 숫자에서 가장많은 패턴을 가지고 있는 숫자 10개에 대한 패턴의 숫자들을 
+    기입하시오
+
+
+
+
+5. 연도별 당첨자수(winner_nu)를 추출하여 나타내어 보시오
+
+select year, sum(winner_nu) as sum_wn
+from lotto
+group by year;
+
+

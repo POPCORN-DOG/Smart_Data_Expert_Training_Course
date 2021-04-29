@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+        <property>
+                <name>mapred.job.tracker</name>
+                <value>NameNode:9001</value>
+        </property>
+        <property>
+                <name>mapred.local.dir</name>
+                <value>/home/hadoop/hdfs/mapred</value>
+        </property>
+        <property>
+                <name>mapred.system.dir</name>
+                <value>/home/hadoop/hdfs/mapred</value>
+        </property>
+</configuration>

@@ -1,0 +1,123 @@
+## 하이브적용예제문제_20190125(Friday)
+
+
+1번 : 최대 지연을 일으킨 비행기를 찾아내시오. 
+[관련 컬럼:arrdelay/ flightnum]
+
+select flightnum, max(arrdelay) as max_ady
+    > from airdelay                          
+    > group by flightnum                     
+    > order by max_ady desc                     
+    > limit 10;
+
+
+2번 : 가장 많이 취소된 비행일정은 몇 월에 주로 나타나는가? 
+[관련컬럼 : cancelled/ month]
+
+select month, count(cancelled) as cancelled 
+    > from airdelay                              
+    > group by month                             
+    > order by month 
+    > limit 10;
+
+
+3번 : 비행일정이 주로 취소되는 원인은 무엇인가? 
+[관련컬럼 : cancellationcode/ cancelled]
+
+select count(cancelled) as cnt_cancel, cancellationcode
+    > from airdelay
+    > group by cancellationcode 
+    > order by cnt_cancel desc;
+
+
+4번 : 월별 비행거리가 차이가 있는지 살펴보시오? 
+[관련컬럼 : month/ distance]
+
+select month, sum(distance) as sum_distance
+    > from airdelay                              
+    > group by month                             
+    > order by month;  
+
+
+5번 : 년도별 취소 비행건수를 비교하시오. 
+[관련컬럼 : cancelled/ year]
+
+select year, count(cancelled) as cnt_cancel         
+    > from airdelay
+    > group by year
+    > order by year;
+
+
+6번 : 비행시간(airtime)을 년, 월별로 하여 평균시간으로 나타내시오. 
+[관련컬럼 : year/month/airtime]
+
+
+select year, month,round(avg(airtime),2) as avg_airtime
+    > from airdelay
+    > group by year, month
+    > order by year, month;
+
+
+
+7번 : 비행시간(airtime)을 비행기별(flightnum)로 큰순서부터 나열하시오. [10개만 추출] 
+[관련컬럼 : flightnum/airtime]
+
+
+select flightnum, sum(airtime) as sum_airtime 
+    > from airdelay
+    > group by flightnum
+    > order by sum_airtime desc 
+    > limit 10;
+
+8번 : 요일(dayofweek)별로 지연(arrdelay)시간과 비행시간(airtime)의 차이를 보시오. 
+[관련컬럼 : dayofweek/arrdelay/airtime]
+
+select dayofweek, round(avg(arrdelay),2) as avg_arrdelay, round(avg(airtime),2) as avg_airtime
+    > from airdelay                                                                                 
+    > group by dayofweek                                                                            
+    > order by dayofweek;
+
+
+9번 : 매월중 어느날(DayofMonth)별로 지연(arrdelay)차이가 있는지 살피시오.
+[관련컬럼 : dayofmonth/ arrdelay]
+
+select dayofmonth, round(avg(arrdelay),2) as avg_arrdelay
+    > from airdelay                                   
+    > group by dayofmonth                             
+    > order by dayofmonth;
+
+
+10번 : 출발지(Origin)와 도착지(Dest)별로 가장 빈번한 지연
+(arrdelay)내용들을 비교하시오.[10개만 추출]
+[관련컬럼 : origin/dest/arrdelay]
+
+select origin, dest, round(avg(arrdelay),2) as avg_arrdelay
+    > from airdelay
+    > group by origin, dest
+    > order by avg_arrdelay desc
+    > limit 10;
+
+
+
+
+11번 : 출발지와 도착지별로 평균적으로 가장 비행시간이 큰 순
+서대로 나열하시오.[10개만 추출]
+[관련컬럼 : origin/dest/airtime]
+
+select origin, dest, round(avg(airtime),2) as avg_airtime
+    > from airdelay                                            
+    > group by origin, dest                                    
+    > order by avg_airtime desc                                
+    > limit 10;
+
+
+12번 : 연도별 요일별로 비행시간 차이가 있는지 살피시오.
+[관련컬럼 : year/dayofweek/airtime]
+
+select year, dayofweek, round(avg(airtime),2) as avg_airtime
+    > from airdelay                                               
+    > group by year, dayofweek                                    
+    > order by year, dayofweek;
+
+
+
